@@ -20,7 +20,6 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Rect;
-import android.graphics.Region.Op;
 import android.graphics.drawable.Drawable;
 import android.view.View;
 
@@ -35,8 +34,6 @@ import com.android.launcher3.folder.FolderIcon;
  * A utility class to generate preview bitmap for dragging.
  */
 public class DragPreviewProvider {
-
-    private final Rect mTempRect = new Rect();
 
     protected final View mView;
 
@@ -53,8 +50,7 @@ public class DragPreviewProvider {
 
     public DragPreviewProvider(View view, Context context) {
         mView = view;
-        blurSizeOutline =
-                context.getResources().getDimensionPixelSize(R.dimen.blur_size_medium_outline);
+        blurSizeOutline = context.getResources().getDimensionPixelSize(R.dimen.blur_size_medium_outline);
 
         if (mView instanceof BubbleTextView) {
             Drawable d = ((BubbleTextView) mView).getIcon();
@@ -71,30 +67,21 @@ public class DragPreviewProvider {
     private void drawDragView(Canvas destCanvas) {
         destCanvas.save();
         if (mView instanceof BubbleTextView) {
-            Drawable d = ((BubbleTextView) mView).getIcon();
-            Rect bounds = getDrawableBounds(d);
+            Drawable icon = ((BubbleTextView) mView).getIcon();
+            Rect bounds = getDrawableBounds(icon);
             destCanvas.translate(blurSizeOutline / 2 - bounds.left,
                     blurSizeOutline / 2 - bounds.top);
-            d.draw(destCanvas);
-        } else {
-            final Rect clipRect = mTempRect;
-            mView.getDrawingRect(clipRect);
-
-            boolean textVisible = false;
-            if (mView instanceof FolderIcon) {
-                // For FolderIcons the text can bleed into the icon area, and so we need to
-                // hide the text completely (which can't be achieved by clipping).
-                if (((FolderIcon) mView).getTextVisible()) {
-                    ((FolderIcon) mView).setTextVisible(false);
-                    textVisible = true;
-                }
+            icon.draw(destCanvas);
+        } else if (mView instanceof FolderIcon) {
+            boolean textVisible = ((FolderIcon) mView).getTextVisible();
+            // For FolderIcons the text can bleed into the icon area, and so we need to
+            // hide the text completely (which can't be achieved by clipping).
+            if (textVisible) {
+                ((FolderIcon) mView).setTextVisible(false);
             }
             destCanvas.translate(-mView.getScrollX() + blurSizeOutline / 2,
                     -mView.getScrollY() + blurSizeOutline / 2);
-            destCanvas.clipRect(clipRect, Op.REPLACE);
             mView.draw(destCanvas);
-
-            // Restore text visibility of FolderIcon if necessary
             if (textVisible) {
                 ((FolderIcon) mView).setTextVisible(true);
             }
